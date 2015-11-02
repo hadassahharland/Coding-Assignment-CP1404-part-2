@@ -1,0 +1,47 @@
+# from kivy.app import App
+# from kivy.lang import Builder
+
+BoxLayout:
+    orientation: 'vertical'
+    Label:
+        id: current_trip_label
+        text: app.current_trip_location()
+        font_size: 21
+        colour: (1, 1, 0.5, 1)
+    BoxLayout:
+        orientation: 'horizontal'
+#        Spinner:
+#            id: state_selection
+#            text: app.current_state
+#            # values takes a list - could be a literal here or variable in app
+#            values: app.state_codes
+#            # on_text is the event (not on_release) when the text updates (spinner option is selected)
+#            # note that on_text runs even when the text is set for the very first time
+#            on_text: app.change_state(self.text)
+#        Label:
+#            id: output_label
+#            font_size: 48
+#            color: (1, 1, 0.9, 1)
+        Spinner:
+            id: country_spinner
+            text: "Country"
+        TextInput:
+            id: current_country_input
+    BoxLayout:
+        orientation: 'horizontal'
+        Label:
+            id: home_country_label
+            test: "Home Country"
+        TextInput:
+            id: home_country_input
+    Label:
+        id: date_label
+        text: "Date"
+    BoxLayout:
+        orientation: 'horizontal'
+        Label:
+            id: status_label
+            text: app.status_label()
+        Button:
+            id: update_button
+            on_press: app.update_button_press()
