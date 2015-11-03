@@ -1,26 +1,36 @@
 __author__ = 'Dassa'
 
+from currency import get_details
 from currency import convert
 from trip import Details
 from kivy.app import App
 from kivy.lang import Builder
+from kivy.core.window import Window
+import time
 
+# Retrieve home_country from first line of config.txt assume no dates
+config_data = open("config.txt", mode='r', encoding="utf-8")
+home_country = config_data.readline()
 
-home_country = "Australia"
-todays_date = "2002/09/08"
-# retrieve today's date
+# Retrieve locations from config.txt file format: location,start_date,end_date
 details = Details()
-details.add("Japan", "2002/09/07", "2002/09/09")
-# add to details inside app
+details.locations = []
+for line in config_data.readlines():
+    parts = line.strip().split(",")
+    details.locations.append(tuple(parts))
+config_data.close()
+# debugging
+# print(details.locations)
+
+# Retrieve today's date using time builtin in format YYYY/MM/DD
+todays_date = time.strftime("%Y/%m/%d")
 
 
-class BoxLayoutDemo(App):
+class CurrencyConverter(App):
     def build(self):
         self.title = "GUI"
         self.root = Builder.load_file('gui.kv')
-        # setting the size of window to 350 x 700
-        self. =
-        # self.root = Builder.__sizeof__()
+        Window.size = (350, 700)
         self.root.ids.home_country_label.text = home_country
         return self.root
 
@@ -28,7 +38,8 @@ class BoxLayoutDemo(App):
         pass
         # On press of the update button retrieve fresh data from webpage
 
-    def status_label(self):
+    @staticmethod
+    def status_label():
         return "status label"
         # If invalid country name return "Invalid Country: 'country_name'"
         # If invalid trip dates return "Invalid Dates: 'dates'"
@@ -38,9 +49,8 @@ class BoxLayoutDemo(App):
         # If the config file could not be loaded return "Trip Details not found"
         # If the config file loaded but contains invalid trip details return "Invalid Trip Details"
 
-
-
-    def current_trip_location(self):
+    @staticmethod
+    def current_trip_location():
         if False: # location chosen on spinner
             current_country = "spinner input" # location from spinner
         else: # no location chosen on spinner
@@ -49,26 +59,29 @@ class BoxLayoutDemo(App):
         #
         # Centralize this label
 
-    def todays_date(self):
+    @staticmethod
+    def todays_date():
+        label = "  Today is:" + "\n" + todays_date
         # retrieve today's date
-        return "Today is: \n" + todays_date
+        return label
         # Centralize this label
 
-BoxLayoutDemo().run()
+CurrencyConverter().run()
 
 # Currency retrieval processing
 # debugging
 # home_country = "Japan"
-# home_currency = get_details(home_country)[1]
+home_currency = get_details(home_country)[1]
 # print(home_currency)          returns: JPY
 
-# home_currency = currency.get_details(home_country)[1] # to retrieve code
+home_currency = get_details(home_country)[1] # to retrieve code
 # finding target_country
-# if spinner == None or spinner == current_trip_location:
-#   target_country = current_trip_location
-# else:
-#   target_country = spinner
-# target_currency = currency.get_details(target_country)[1]
+spinner = "spinner"
+if spinner == current_trip_location:
+  target_country = current_trip_location
+else:
+  target_country = spinner
+target_currency = .get_details(target_country)[1]
 
 # Input processing
 # On update_button_press

@@ -25,14 +25,14 @@ class Details:
         if start_date > end_date:
             raise Error('invalid trip dates: {} {}'.format(start_date, end_date))
         for location in self.locations:
-            if location[0] == start_date:
+            if location[1] == start_date:
                 raise Error('{}-{} already added'.format(start_date, end_date))
-        self.locations.append((start_date, end_date, country_name))
+        self.locations.append((country_name, start_date, end_date))
 
     def current_country(self, date_string):
         for location in self.locations:
-            if location[0] <= date_string <= location[1]:
-                return location[2]
+            if location[1] <= date_string <= location[2]:
+                return location[0]
         raise Error('invalid date')
 
     def empty(self):
