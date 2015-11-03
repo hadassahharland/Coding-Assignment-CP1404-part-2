@@ -10,21 +10,13 @@ BoxLayout:
         colour: (1, 1, 0.5, 1)
     BoxLayout:
         orientation: 'horizontal'
-#        Spinner:
-#            id: state_selection
-#            text: app.current_state
-#            # values takes a list - could be a literal here or variable in app
-#            values: app.state_codes
-#            # on_text is the event (not on_release) when the text updates (spinner option is selected)
-#            # note that on_text runs even when the text is set for the very first time
-#            on_text: app.change_state(self.text)
-#        Label:
-#            id: output_label
-#            font_size: 48
-#            color: (1, 1, 0.9, 1)
         Spinner:
             id: country_spinner
-            text: "Country"
+            text: app.current_state
+            # Values takes a list
+            values: app.country_names
+            # When text is changed, run change_state
+            on_text: app.change_state(self.text)
         TextInput:
             id: current_country_input
     BoxLayout:
@@ -44,4 +36,5 @@ BoxLayout:
             text: app.status_label()
         Button:
             id: update_button
+            text: "Update Currency"
             on_press: app.update_button_press()

@@ -1,11 +1,14 @@
 __author__ = 'Dassa'
 
 from currency import get_details
-from currency import convert
+# from currency import convert
 from trip import Details
 from kivy.app import App
 from kivy.lang import Builder
 from kivy.core.window import Window
+from kivy.properties import StringProperty
+from kivy.properties import ListProperty
+# from currency import get_all_details
 import time
 
 # Retrieve home_country from first line of config.txt assume no dates
@@ -15,24 +18,50 @@ home_country = config_data.readline()
 # Retrieve locations from config.txt file format: location,start_date,end_date
 details = Details()
 details.locations = []
+country_list = []
 for line in config_data.readlines():
     parts = line.strip().split(",")
+    # add all details to locations
     details.locations.append(tuple(parts))
+    # add only country names to country_list
+    country_list.append(parts[0])
 config_data.close()
 # debugging
 # print(details.locations)
+# print(country_list)
 
 # Retrieve today's date using time builtin in format YYYY/MM/DD
 todays_date = time.strftime("%Y/%m/%d")
 
+# Relevant to spinner
+
 
 class CurrencyConverter(App):
+
+    # class variables
+    current_state = StringProperty()
+    home_state = StringProperty()
+    country_names = ListProperty()
+    current_country = details.current_country(todays_date)
+
+
+    def __init__(self, **kwargs):
+        super(CurrencyConverter, self).__init__(**kwargs)
+
     def build(self):
         self.title = "GUI"
         self.root = Builder.load_file('gui.kv')
         Window.size = (350, 700)
+        # Set current state to current country (currently 1st country in list)
+        self.current_state = self.current_country
+        # add values to the spinner
+        self.country_names = country_list
         self.root.ids.home_country_label.text = home_country
         return self.root
+
+    def change_state(self, text):
+        # self.root.ids.test_label.text = text
+        return "change state"
 
     def update_button_press(self):
         pass
@@ -51,12 +80,10 @@ class CurrencyConverter(App):
 
     @staticmethod
     def current_trip_location():
-        if False: # location chosen on spinner
-            current_country = "spinner input" # location from spinner
-        else: # no location chosen on spinner
-            current_country = details.current_country(todays_date)
-        return "Current trip Location: \n" + current_country
-        #
+        # if False: # location chosen on spinner
+        #     current_country = "spinner input" # location from spinner
+        # else: # no location chosen on spinner
+        return "Current trip Location: \n" + CurrencyConverter.current_country
         # Centralize this label
 
     @staticmethod
@@ -81,7 +108,7 @@ if spinner == current_trip_location:
   target_country = current_trip_location
 else:
   target_country = spinner
-target_currency = .get_details(target_country)[1]
+target_currency = get_details(target_country)[1]
 
 # Input processing
 # On update_button_press
