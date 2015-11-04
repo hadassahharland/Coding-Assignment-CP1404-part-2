@@ -1,7 +1,7 @@
 __author__ = 'Dassa'
 
 from currency import get_details
-# from currency import convert
+from currency import convert
 from trip import Details
 from kivy.app import App
 from kivy.lang import Builder
@@ -13,7 +13,7 @@ import time
 
 # Retrieve home_country from first line of config.txt assume no dates
 config_data = open("config.txt", mode='r', encoding="utf-8")
-home_country = config_data.readline()
+home_country = config_data.readline().strip("\n")
 
 # Retrieve locations from config.txt file format: location,start_date,end_date
 details = Details()
@@ -43,7 +43,16 @@ class CurrencyConverter(App):
     home_state = StringProperty()
     country_names = ListProperty()
     current_country = details.current_country(todays_date)
+    current_country_target_currency = get_details(current_country)[1]
+    spinner_country = current_country_target_currency
+    home_currency = get_details(home_country)[1]  # to retrieve code
+    # If the spinner is what it was before, don't change it
+    target_currency = spinner_country
 
+    # if get_details(current_state)[1] == current_country_target_currency:
+    #     target_currency = current_country_target_currency
+    # else:
+    #     target_currency = get_details(current_state)[1]
 
     def __init__(self, **kwargs):
         super(CurrencyConverter, self).__init__(**kwargs)
@@ -59,12 +68,21 @@ class CurrencyConverter(App):
         self.root.ids.home_country_label.text = home_country
         return self.root
 
+    # processing input from app
+    def on_text_validate(self):
+        amount = self.root.ids.current_country_input.text
+        end_amount = convert(amount, CurrencyConverter.home_currency, CurrencyConverter.target_currency)
+        print(end_amount)
+        # self.root.ids.home_country_input.text =
+        # return amount
+
     def change_state(self, text):
         # self.root.ids.test_label.text = text
         return "change state"
 
-    def update_button_press(self):
-        pass
+    @staticmethod
+    def update_button_press():
+        end_amount = convert(amount, home_currency, target_currency)
         # On press of the update button retrieve fresh data from webpage
 
     @staticmethod
@@ -80,35 +98,31 @@ class CurrencyConverter(App):
 
     @staticmethod
     def current_trip_location():
-        # if False: # location chosen on spinner
-        #     current_country = "spinner input" # location from spinner
-        # else: # no location chosen on spinner
         return "Current trip Location: \n" + CurrencyConverter.current_country
-        # Centralize this label
 
     @staticmethod
     def todays_date():
         label = "  Today is:" + "\n" + todays_date
-        # retrieve today's date
+        # format today's date for the gui
         return label
-        # Centralize this label
 
 CurrencyConverter().run()
+
 
 # Currency retrieval processing
 # debugging
 # home_country = "Japan"
-home_currency = get_details(home_country)[1]
+# home_currency = g. et_details(home_country)[1]
 # print(home_currency)          returns: JPY
 
-home_currency = get_details(home_country)[1] # to retrieve code
-# finding target_country
-spinner = "spinner"
-if spinner == current_trip_location:
-  target_country = current_trip_location
-else:
-  target_country = spinner
-target_currency = get_details(target_country)[1]
+# home_currency = get_details(home_country)[1]  # to retrieve code
+# # If the spinner is what it was before, don't change it
+# if get_details(CurrencyConverter.current_state)[1] == CurrencyConverter.current_country_target_currency:
+#     target_currency = CurrencyConverter.current_country_target_currency
+# else:
+#     target_currency = get_details(CurrencyConverter.current_state)[1]
+# debugging
+# print(target_currency)
 
 # Input processing
 # On update_button_press
@@ -120,7 +134,6 @@ target_currency = get_details(target_country)[1]
 #     pass
     # do nothing
 # end_amount = currency.convert(amount, home_currency, target_currency)
-# currency not recognised
 
 
 #

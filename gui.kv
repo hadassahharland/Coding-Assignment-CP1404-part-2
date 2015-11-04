@@ -19,6 +19,8 @@ BoxLayout:
             on_text: app.change_state(self.text)
         TextInput:
             id: current_country_input
+            on_text: app.on_text_validate()
+
     BoxLayout:
         orientation: 'horizontal'
         Label:
