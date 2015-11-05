@@ -5,6 +5,7 @@ BoxLayout:
     orientation: 'vertical'
     Label:
         id: current_trip_label
+        halign: "center"
         text: app.current_trip_location()
         font_size: 21
         colour: (1, 1, 0.5, 1)
@@ -14,7 +15,7 @@ BoxLayout:
             id: country_spinner
             text: app.current_state
             # Values takes a list
-            values: app.country_names
+            values: app.country_list
             # When text is changed, run change_state
             on_text: app.change_state(self.text)
         TextInput:
@@ -27,7 +28,7 @@ BoxLayout:
         orientation: 'horizontal'
         Label:
             id: home_country_label
-            text: app.home_country
+            text: app.current_trip_location()
         TextInput:
             readonly: True
             id: home_country_input
@@ -36,12 +37,12 @@ BoxLayout:
             multiline: False
     Label:
         id: date_label
+        halign: "center"
         text: app.todays_date_label()
     BoxLayout:
         orientation: 'horizontal'
         Label:
             id: status_label
-            text: app.status_label()
         Button:
             id: update_button
             text: "Update Currency"

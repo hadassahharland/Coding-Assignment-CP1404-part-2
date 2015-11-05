@@ -1,36 +1,14 @@
-__author__ = 'Dassa'
-
 from currency import get_details
 from currency import convert
-from currency import get_all_details
 from trip import Details
 from kivy.app import App
 from kivy.lang import Builder
 from kivy.core.window import Window
 from kivy.properties import StringProperty
 from kivy.properties import ListProperty
-
-# from currency import get_all_details
+from currency import get_all_details
 import time
-
-# Retrieve home_country from first line of config.txt assume no dates
-config_data = open("config.txt", mode='r', encoding="utf-8")
-home_country = config_data.readline().strip("\n")
-
-# Retrieve locations from config.txt file format: location,start_date,end_date
-details = Details()
-details.locations = []
-country_list = []
-for line in config_data.readlines():
-    parts = line.strip().split(",")
-    # add all details to locations
-    details.locations.append(tuple(parts))
-    # add only country names to country_list
-    country_list.append(parts[0])
-config_data.close()
-# debugging
-# print(details.locations)
-# print(country_list)
+__author__ = 'Dassa'
 
 
 class CurrencyConverter(App):
@@ -46,12 +24,16 @@ class CurrencyConverter(App):
         self.todays_date = time.strftime("%Y/%m/%d")
         # Retrieve current time using time builtin
         self.time = time.strftime('%H:%M:%S')
-        self.conversion_rate_forward = 0
-        self.conversion_rate_backwards = 0
-        self.current_country = details.current_country(self.todays_date)
-        self.home_currency = get_details(home_country)[1]  # to retrieve code
-        self.target_currency = None
+        self.forward_conversion_rate = -1
+        self.backward_conversion_rate = -1
+        self.details = Details()
+        self.country_list = []
+        self.home_country = ""
         self.load_config()
+        self.current_country = self.details.current_country(self.todays_date)
+        self.home_currency = get_details(self.home_country)[1]  # to retrieve code
+        self.target_currency = get_details(self.current_country)[1]
+        self.target_country = self.current_country
 
     def build(self):
         self.title = "GUI"
@@ -60,23 +42,21 @@ class CurrencyConverter(App):
         # Set current state to current country (currently 1st country in list)
         self.current_state = ""
         # add values to the spinner
-        self.country_names = country_list
-        self.root.ids.home_country_label.text = home_country
+        self.root.ids.home_country_label.text = self.home_country
         return self.root
 
     def load_config(self):
         config_data = open("config.txt", mode='r', encoding="utf-8")
-        home_country = config_data.readline().strip("\n")
+        self.home_country = config_data.readline().strip("\n")
         # Retrieve locations from config.txt file format: location,start_date,end_date
-        details = Details()
-        details.locations = []
-        country_list = []
+        self.details.locations = []
+        self.country_list = []
         for line in config_data.readlines():
             parts = line.strip().split(",")
             # add all details to locations
-            details.locations.append(tuple(parts))
+            self.details.locations.append(tuple(parts))
             # add only country names to country_list
-            country_list.append(parts[0])
+            self.country_list.append(parts[0])
         config_data.close()
 
     # processing input from app separately
@@ -84,46 +64,56 @@ class CurrencyConverter(App):
     def convert_forward(self):
         try:
             amount = float(self.root.ids.current_country_input.text)
+            end_amount = str(float(self.forward_conversion_rate)*amount)
+            self.root.ids.home_country_input.text = self.get_symbol(self.home_country) + end_amount
+            self.root.ids.status_label.text = "{} ({}) to {} ({})".format(self.target_currency, self.get_symbol(self.target_country), self.home_currency, self.get_symbol(self.home_country))
+            return end_amount
         except ValueError:
-            self.root.ids.status_label.text = "Updated at" + self.time
-        end_amount = str(float(self.conversion_rate_forward)*amount)
-        self.root.ids.home_country_input.text = end_amount
-        return end_amount
+            self.root.ids.status_label.text = "Invalid Input"
 
     # takes home value and converts to value in location currency
     def convert_backward(self):
-        amount = self.root.ids.home_country_input.text
-        end_amount = str(float(self.conversion_rate_backwards)*amount)
-        self.root.ids.current_country_input.text = end_amount
-        return end_amount
+        try:
+            amount = float(self.root.ids.home_country_input.text)
+            end_amount = str(float(self.backward_conversion_rate)*amount)
+            self.root.ids.current_country_input.text = self.get_symbol(self.target_country) + end_amount
+            self.root.ids.status_label.text = "{} ({}) to {} ({})".format(self.home_currency, self.get_symbol(self.home_country), self.target_currency, self.get_symbol(self.target_country))
+            return end_amount
+        except ValueError:
+            self.root.ids.status_label.text = "Invalid Input"
+
+    def get_symbol(self, country):
+        if country in get_all_details().keys():
+            symbol = get_all_details()[country][0][2]
+            return symbol
+        else:
+            return None
 
     # takes a country name and returns it's currency code using get_all_details
     def change_state(self, target_country):
         self.root.ids.current_country_input.readonly = False
         self.root.ids.home_country_input.readonly = False
+        self.target_country = self.root.ids.country_spinner.text
         all_details = get_all_details()
         for country in all_details:
             if target_country == country:
                 details = all_details[country]
                 target_country_details = details[0]
-                CurrencyConverter.target_currency = target_country_details[1]
-        self.get_conversion_rate()
-        # self.root.ids.current_country_input.
-        # self.root.ids.test_label.text = text
-        return CurrencyConverter.target_currency
+                self.target_currency = target_country_details[1]
+                self.get_conversion_rate()
+                return [self.target_currency, target_country_details[2]]
 
     def get_conversion_rate(self):
-        forward_conversion_rate = convert(1, self.home_currency, self.target_currency)
-        backward_conversion_rate = convert(1, self.target_currency, self.home_currency)
+        self.forward_conversion_rate = convert(1, self.home_currency, self.target_currency)
+        self.backward_conversion_rate = convert(1, self.target_currency, self.home_currency)
 
     def update_button_press(self):
         self.root.ids.current_country_input.readonly = False
         self.root.ids.home_country_input.readonly = False
-        self.get_conversion_rate()
-        self.root.ids.status_label.text = "Updated at" + self.time
-        # Update Convert CurrencyConverter.convert_forward() or CurrencyConverter.convert_backward()
-
         # On press of the update button retrieve fresh data from webpage
+        self.get_conversion_rate()
+        self.root.ids.status_label.text = "Updated at " + self.time
+        self.root.ids.country_spinner.text = self.current_country
 
     @staticmethod
     def status_label():
@@ -141,12 +131,11 @@ class CurrencyConverter(App):
         return "Current trip Location: \n" + self.current_country
 
     def todays_date_label(self):
-        label = "  Today is:" + "\n" + self.todays_date
+        label = "Today is:" + "\n" + self.todays_date
         # format today's date for the gui
         return label
 
 CurrencyConverter().run()
-
 
 # Currency retrieval processing
 # debugging
