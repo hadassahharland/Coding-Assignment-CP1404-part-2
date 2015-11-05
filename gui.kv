@@ -27,7 +27,7 @@ BoxLayout:
         orientation: 'horizontal'
         Label:
             id: home_country_label
-            test: "Home Country"
+            text: app.home_country
         TextInput:
             readonly: True
             id: home_country_input
@@ -36,7 +36,7 @@ BoxLayout:
             multiline: False
     Label:
         id: date_label
-        text: app.todays_date()
+        text: app.todays_date_label()
     BoxLayout:
         orientation: 'horizontal'
         Label:
