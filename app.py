@@ -2,12 +2,14 @@ __author__ = 'Dassa'
 
 from currency import get_details
 from currency import convert
+from currency import get_all_details
 from trip import Details
 from kivy.app import App
 from kivy.lang import Builder
 from kivy.core.window import Window
 from kivy.properties import StringProperty
 from kivy.properties import ListProperty
+
 # from currency import get_all_details
 import time
 
@@ -43,45 +45,53 @@ class CurrencyConverter(App):
     home_state = StringProperty()
     country_names = ListProperty()
     current_country = details.current_country(todays_date)
-    current_country_target_currency = get_details(current_country)[1]
-    spinner_country = current_country_target_currency
     home_currency = get_details(home_country)[1]  # to retrieve code
-    # If the spinner is what it was before, don't change it
-    target_currency = spinner_country
+    target_currency = None
 
-    # if get_details(current_state)[1] == current_country_target_currency:
-    #     target_currency = current_country_target_currency
-    # else:
-    #     target_currency = get_details(current_state)[1]
-
-    def __init__(self, **kwargs):
-        super(CurrencyConverter, self).__init__(**kwargs)
 
     def build(self):
         self.title = "GUI"
         self.root = Builder.load_file('gui.kv')
         Window.size = (350, 700)
         # Set current state to current country (currently 1st country in list)
-        self.current_state = self.current_country
+        self.current_state = ""
         # add values to the spinner
         self.country_names = country_list
         self.root.ids.home_country_label.text = home_country
         return self.root
 
-    # processing input from app
-    def on_text_validate(self):
+    # processing input from app separately
+    # takes location value and converts to value in home currency
+    def convert_forward(self):
         amount = self.root.ids.current_country_input.text
-        end_amount = convert(amount, CurrencyConverter.home_currency, CurrencyConverter.target_currency)
-        print(end_amount)
-        # self.root.ids.home_country_input.text =
-        # return amount
+        end_amount = str(convert(amount, CurrencyConverter.home_currency, CurrencyConverter.target_currency))
+        self.root.ids.home_country_input.text = end_amount
+        return end_amount
 
-    def change_state(self, text):
+    # takes home value and converts to value in location currency
+    def convert_backward(self):
+        amount = self.root.ids.home_country_input.text
+        end_amount = str(convert(amount, CurrencyConverter.target_currency, CurrencyConverter.home_currency))
+        self.root.ids.current_country_input.text = end_amount
+        return end_amount
+
+
+# takes a country name and returns it's currency code using get_all_details
+    def change_state(self, target_country):
+        self.root.ids.current_country_input.readonly = False
+        self.root.ids.home_country_input.readonly = False
+        all_details = get_all_details()
+        for country in all_details:
+            if target_country == country:
+                details = all_details[country]
+                target_country_details = details[0]
+                CurrencyConverter.target_currency = target_country_details[1]
+        # self.root.ids.current_country_input.
         # self.root.ids.test_label.text = text
-        return "change state"
+        return CurrencyConverter.target_currency
 
-    @staticmethod
-    def update_button_press():
+    def update_button_press(self):
+        self.root.ids.country_spinner.readonly = False
         end_amount = convert(amount, home_currency, target_currency)
         # On press of the update button retrieve fresh data from webpage
 

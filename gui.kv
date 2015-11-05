@@ -18,16 +18,22 @@ BoxLayout:
             # When text is changed, run change_state
             on_text: app.change_state(self.text)
         TextInput:
+            readonly: True
             id: current_country_input
-            on_text: app.on_text_validate()
-
+            text:
+            on_text_validate: app.convert_forward()
+            multiline: False
     BoxLayout:
         orientation: 'horizontal'
         Label:
             id: home_country_label
             test: "Home Country"
         TextInput:
+            readonly: True
             id: home_country_input
+            text:
+            on_text_validate: app.convert_backward()
+            multiline: False
     Label:
         id: date_label
         text: app.todays_date()
