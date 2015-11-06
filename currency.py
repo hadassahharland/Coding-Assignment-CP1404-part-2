@@ -56,8 +56,6 @@ def get_all_details():
     return all_details
 
 
-get_all_details()
-
 # if __name__ == '__main__':
 #     def conversion_test(amount, source, target):
 #         converted_amount = convert(amount, source, target)

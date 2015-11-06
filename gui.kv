@@ -1,5 +1,11 @@
-# from kivy.app import App
-# from kivy.lang import Builder
+<Label>
+    canvas.before:
+        Color:
+            rgba: 0.3, 0.1, 0.4, 1
+        Rectangle:
+            pos: self.pos
+            size: self.size
+
 
 BoxLayout:
     orientation: 'vertical'
@@ -7,10 +13,11 @@ BoxLayout:
         id: current_trip_label
         halign: "center"
         text: app.current_trip_location()
-        font_size: 21
-        colour: (1, 1, 0.5, 1)
+        font_size: 26
+        color: (1, 1, 1, 1)
     BoxLayout:
         orientation: 'horizontal'
+        size_hint_y: 0.3
         Spinner:
             id: country_spinner
             text: app.current_state
@@ -18,32 +25,47 @@ BoxLayout:
             values: app.country_list
             # When text is changed, run change_state
             on_text: app.change_state(self.text)
+            font_size: 20
         TextInput:
             readonly: True
             id: current_country_input
             text:
             on_text_validate: app.convert_forward()
             multiline: False
+            # on_touch_up: status_label.text = ""
+            font_size: 20
     BoxLayout:
         orientation: 'horizontal'
+        size_hint_y: 0.3
         Label:
             id: home_country_label
             text: app.current_trip_location()
+            font_size: 20
         TextInput:
             readonly: True
             id: home_country_input
             text:
             on_text_validate: app.convert_backward()
             multiline: False
+            font_size: 20
+            # on_touch_up: status_label.text = ""
     Label:
         id: date_label
         halign: "center"
         text: app.todays_date_label()
+        font_size: 30
+        color: (1, 1, 1, 1)
     BoxLayout:
         orientation: 'horizontal'
+        size_hint_y: 0.3
         Label:
             id: status_label
+            text: app.status_text
+            halign: "center"
+            font_size: 20
         Button:
             id: update_button
             text: "Update Currency"
+            disabled: app.update_button_disabled
             on_press: app.update_button_press()
+            font_size: 20

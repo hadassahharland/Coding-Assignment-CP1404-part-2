@@ -7,16 +7,19 @@ from kivy.core.window import Window
 from kivy.properties import StringProperty
 from kivy.properties import ListProperty
 from currency import get_all_details
+from trip import Error
 import time
 __author__ = 'Dassa'
 
 
 class CurrencyConverter(App):
 
-    # class variables
+    """ class variables """
     current_state = StringProperty()
     home_state = StringProperty()
     country_names = ListProperty()
+    status_text = StringProperty()
+    update_button_disabled = StringProperty()
 
     def __init__(self, **kwargs):
         super(CurrencyConverter, self).__init__(**kwargs)
@@ -30,10 +33,15 @@ class CurrencyConverter(App):
         self.country_list = []
         self.home_country = ""
         self.load_config()
-        self.current_country = self.details.current_country(self.todays_date)
-        self.home_currency = get_details(self.home_country)[1]  # to retrieve code
-        self.target_currency = get_details(self.current_country)[1]
-        self.target_country = self.current_country
+        self.update_button_disabled = ""
+        try:
+            self.current_country = self.details.current_country(self.todays_date)
+            self.home_currency = get_details(self.home_country)[1]  # to retrieve code
+            self.target_currency = get_details(self.current_country)[1]
+        except Error:
+            self.current_country = "Could not be found"
+            self.target_country = self.current_country
+            self.update_button_disabled = "True"
 
     def build(self):
         self.title = "GUI"
@@ -45,43 +53,54 @@ class CurrencyConverter(App):
         self.root.ids.home_country_label.text = self.home_country
         return self.root
 
+    """ load the config file and store the data """
     def load_config(self):
-        config_data = open("config.txt", mode='r', encoding="utf-8")
-        self.home_country = config_data.readline().strip("\n")
-        # Retrieve locations from config.txt file format: location,start_date,end_date
-        self.details.locations = []
-        self.country_list = []
-        for line in config_data.readlines():
-            parts = line.strip().split(",")
-            # add all details to locations
-            self.details.locations.append(tuple(parts))
-            # add only country names to country_list
-            self.country_list.append(parts[0])
-        config_data.close()
+        try:
+            config_data = open("config.txt", mode='r', encoding="utf-8")
+            self.home_country = config_data.readline().strip("\n")
+            # Retrieve locations from config.txt file format: location,start_date,end_date
+            self.details.locations = []
+            self.country_list = []
+            for line in config_data.readlines():
+                parts = line.strip().split(",")
+                # add all details to locations
+                self.details.locations.append(tuple(parts))
+                # checks country exists
+                for key in get_all_details():
+                    if parts[0] == key:
+                        # add only country names to country_list
+                        self.country_list.append(parts[0])
+                    else:
+                        self.status_text = "Invalid trip details"
+            config_data.close()
+            self.status_text = "Config loaded\nsuccessfully"
+        except FileNotFoundError:
+            self.status_text = "Config could not\nbe loaded"
 
     # processing input from app separately
-    # takes location value and converts to value in home currency
+    """ takes location value and converts to value in home currency """
     def convert_forward(self):
         try:
             amount = float(self.root.ids.current_country_input.text)
-            end_amount = str(float(self.forward_conversion_rate)*amount)
-            self.root.ids.home_country_input.text = self.get_symbol(self.home_country) + end_amount
-            self.root.ids.status_label.text = "{} ({}) to {} ({})".format(self.target_currency, self.get_symbol(self.target_country), self.home_currency, self.get_symbol(self.home_country))
+            end_amount = float(float(self.forward_conversion_rate)*amount)
+            self.root.ids.home_country_input.text = str("%.3f" % end_amount)
+            self.status_text = "{} ({}) to {} ({})".format(self.target_currency, self.get_symbol(self.target_country), self.home_currency, self.get_symbol(self.home_country))
             return end_amount
         except ValueError:
-            self.root.ids.status_label.text = "Invalid Input"
+            self.status_text = "Invalid Input"
 
-    # takes home value and converts to value in location currency
+    """ takes home value and converts to value in location  """
     def convert_backward(self):
         try:
             amount = float(self.root.ids.home_country_input.text)
-            end_amount = str(float(self.backward_conversion_rate)*amount)
-            self.root.ids.current_country_input.text = self.get_symbol(self.target_country) + end_amount
-            self.root.ids.status_label.text = "{} ({}) to {} ({})".format(self.home_currency, self.get_symbol(self.home_country), self.target_currency, self.get_symbol(self.target_country))
+            end_amount = float(float(self.backward_conversion_rate)*amount)
+            self.root.ids.current_country_input.text = str("%.3f" % end_amount)
+            self.status_text = "{} ({}) to {} ({})".format(self.home_currency, self.get_symbol(self.home_country), self.target_currency, self.get_symbol(self.target_country))
             return end_amount
         except ValueError:
-            self.root.ids.status_label.text = "Invalid Input"
+            self.status_text = "Invalid Input"
 
+    """ retrieves the symbol for the currency from the currency_details file using the get_all_details() function """
     def get_symbol(self, country):
         if country in get_all_details().keys():
             symbol = get_all_details()[country][0][2]
@@ -89,7 +108,7 @@ class CurrencyConverter(App):
         else:
             return None
 
-    # takes a country name and returns it's currency code using get_all_details
+    """ takes a country name and returns it's currency code using get_all_details """
     def change_state(self, target_country):
         self.root.ids.current_country_input.readonly = False
         self.root.ids.home_country_input.readonly = False
@@ -99,33 +118,27 @@ class CurrencyConverter(App):
             if target_country == country:
                 details = all_details[country]
                 target_country_details = details[0]
-                self.target_currency = target_country_details[1]
-                self.get_conversion_rate()
+                target_currency_new = target_country_details[1]
+                # If the currency code has not changed, do not update
+                if not target_currency_new == self.target_currency:
+                    self.target_currency = target_currency_new
+                    self.get_conversion_rate()
                 return [self.target_currency, target_country_details[2]]
 
+    """ retrieves the conversion rate from the internet """
     def get_conversion_rate(self):
         self.forward_conversion_rate = convert(1, self.home_currency, self.target_currency)
         self.backward_conversion_rate = convert(1, self.target_currency, self.home_currency)
 
     def update_button_press(self):
+        # activates the text input fields
         self.root.ids.current_country_input.readonly = False
         self.root.ids.home_country_input.readonly = False
         # On press of the update button retrieve fresh data from webpage
         self.get_conversion_rate()
-        self.root.ids.status_label.text = "Updated at " + self.time
-        self.root.ids.country_spinner.text = self.current_country
-
-    @staticmethod
-    def status_label():
-        # TODO Complete status label
-        return "status label"
-        # If invalid country name return "Invalid Country: 'country_name'"
-        # If invalid trip dates return "Invalid Dates: 'dates'"
-        # On update_button_press if no change return "Refreshed 'time'"
-        # On update_button_press if change return "'from id''($)' to 'to id''($)'"
-        # If the config file loaded successfully return "Trip Details Accepted"
-        # If the config file could not be loaded return "Trip Details not found"
-        # If the config file loaded but contains invalid trip details return "Invalid Trip Details"
+        self.status_text = "Updated at\n" + self.time
+        if self.root.ids.country_spinner.text == "":
+            self.root.ids.country_spinner.text = self.current_country
 
     def current_trip_location(self):
         return "Current trip Location: \n" + self.current_country
@@ -136,32 +149,3 @@ class CurrencyConverter(App):
         return label
 
 CurrencyConverter().run()
-
-# Currency retrieval processing
-# debugging
-# home_country = "Japan"
-# home_currency = g. et_details(home_country)[1]
-# print(home_currency)          returns: JPY
-
-# home_currency = get_details(home_country)[1]  # to retrieve code
-# # If the spinner is what it was before, don't change it
-# if get_details(CurrencyConverter.current_state)[1] == CurrencyConverter.current_country_target_currency:
-#     target_currency = CurrencyConverter.current_country_target_currency
-# else:
-#     target_currency = get_details(CurrencyConverter.current_state)[1]
-# debugging
-# print(target_currency)
-
-# Input processing
-# On update_button_press
-# if True: # something is input to home_country_input
-#     amount = BoxLayoutDemo.root.ids.home_country_input
-# elif True: #something is input to current_country_input
-#     amount = BoxLayoutDemo.root.ids.current_country_input
-# else:
-#     pass
-    # do nothing
-# end_amount = currency.convert(amount, home_currency, target_currency)
-
-
-#
